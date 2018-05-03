@@ -246,7 +246,7 @@ class CfgTable(Table):
                         'to field %s.\n' % (value, field_name)
                     )
 
-        if isinstance(value, dict) and 'operation' in value:
+        if isinstance(value, dict):
             # in case user want to pass operation attr for ex:
             # <unit operation="delete"/>
             pass
@@ -279,18 +279,19 @@ class CfgTable(Table):
     def _grindfield(self, xpath, value):
         """ returns list of xml elements for field name-value pairs """
         lst = []
+        xpath = xpath.replace('_', '-')
         if isinstance(value, (list, tuple, set)):
             for v in value:
-                lst.append(E(xpath.replace('_', '-'), str(v)))
+                lst.append(E(xpath), str(v)))
         elif isinstance(value, bool):
             if value is True:
-                lst.append(E(xpath.replace('_', '-')))
+                lst.append(E(xpath)))
             elif value is False:
-                lst.append(E(xpath.replace('_', '-'), {'operation': 'delete'}))
-        elif isinstance(value, dict) and 'operation' in value:
-            lst.append(E(xpath.replace('_', '-'), value))
+                lst.append(E(xpath), {'operation': 'delete'}))
+        elif isinstance(value, dict):
+            lst.append(E(xpath), value))
         else:
-            lst.append(E(xpath.replace('_', '-'), str(value)))
+            lst.append(E(xpath), str(value)))
         return lst
 
     def _encode_requiredkeys(self, get_cmd, kvargs):
