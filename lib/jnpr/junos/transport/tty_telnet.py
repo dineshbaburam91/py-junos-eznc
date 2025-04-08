@@ -1,5 +1,5 @@
 from time import sleep
-import telnetlib
+from Exscript.protocols.telnetlib import Telnet as ExscriptTelnet
 import logging
 import sys
 import six
@@ -39,7 +39,9 @@ class Telnet(Terminal):
         """
         # initialize the underlying TTY device
 
-        self._tn = telnetlib.Telnet()
+        self._tn = ExscriptTelnet()
+       
+        # self._tn.set_msg_handler(print)
         self._rx = self._tn
         self.host = host
         self.port = port
@@ -57,7 +59,10 @@ class Telnet(Terminal):
         retry = self.RETRY_OPEN
         while retry > 0:
             try:
-                self._tn.open(self.host, self.port, self.timeout)
+                
+                self._tn.connect_timeout = self.timeout  # set timeout BEFORE calling open() 
+                
+                self._tn.open(self.host, self.port)
                 break
             except Exception:
                 retry -= 1
@@ -80,7 +85,7 @@ class Telnet(Terminal):
 
     def write(self, content):
         """write content + <ENTER>"""
-        logger.debug("Write: %s" % content)
+        
         self._tn.write(six.b((content + "\n")))
 
     def rawwrite(self, content):
@@ -106,10 +111,17 @@ class Telnet(Terminal):
         return self._tn.read_until(PY6.NEW_LINE, self.EXPECT_TIMEOUT)
 
     def read_prompt(self):
+        
         _RE_PAT = [six.b(i) for i in Terminal._RE_PAT]
-        got = self._tn.expect(_RE_PAT, self.EXPECT_TIMEOUT)
-        if PY6.IN_USE in got[2]:
+        
+        got = self._tn.waitfor(_RE_PAT, self.EXPECT_TIMEOUT, cleanup=None)
+
+
+        if PY6.IN_USE.decode() in got[2]:
             raise RuntimeError("open_fail: port already in use")
+
         if len(got) >= 3:
             logger.debug("Got: %s" % got[2])
+
         return (None, None) if not got[1] else (got[2], got[1].lastgroup)
+

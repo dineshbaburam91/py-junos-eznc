@@ -5,7 +5,7 @@ import select
 import socket
 import logging
 import sys
-
+import logging
 from lxml.builder import E
 from lxml.etree import XMLSyntaxError
 from datetime import datetime, timedelta
@@ -54,20 +54,28 @@ class tty_netconf(object):
     def open(self, at_shell):
         """start the XML API process and receive the 'hello' message"""
         nc_cmd = ("junoscript", "xml-mode")[at_shell]
+        logger.debug(f"[DEBUG] Sending Netconf command: '{nc_cmd} netconf need-trailer'")
         self._tty.write(nc_cmd + " netconf need-trailer")
         mark_start = datetime.now()
         mark_end = mark_start + timedelta(seconds=15)
 
         while datetime.now() < mark_end:
             time.sleep(0.1)
+           
             line = self._tty.read()
-            if line.startswith(PY6.STARTS_WITH):
+            
+
+            if isinstance(line, bytes):  
+                line = line.decode('utf-8', errors='ignore')  
+
+            if line.startswith(PY6.STARTS_WITH.decode("utf-8")):  
+                logger.debug(f"[DEBUG] PY6.STARTS_WITH type: {type(PY6.STARTS_WITH)}, value: {PY6.STARTS_WITH}")
                 break
         else:
-            # exceeded the while loop timeout
             raise RuntimeError("Error: netconf not responding")
 
         self.hello = self._receive()
+        
         self._session_id, _ = HelloHandler.parse(
             self.hello.decode("utf-8") if isinstance(self.hello, bytes) else self.hello
         )

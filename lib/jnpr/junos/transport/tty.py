@@ -1,6 +1,6 @@
 from time import sleep
 import logging
-
+import time
 from jnpr.junos import exception as EzErrors
 from jnpr.junos.transport.tty_netconf import tty_netconf
 
@@ -109,6 +109,7 @@ class Terminal(object):
         logger.info("TTY: logging in......")
 
         self.state = self._ST_INIT
+        time.sleep(1)
         self._login_state_machine()
 
         # now start NETCONF XML
@@ -180,7 +181,7 @@ class Terminal(object):
     def _login_state_machine(self, attempt=0):
         if self.login_attempts == attempt:
             raise RuntimeError("login_sm_failure")
-
+        # import pdb;pdb.set_trace()
         prompt, found = self.read_prompt()
 
         def _ev_loader():
@@ -279,3 +280,4 @@ class Terminal(object):
         else:
             # if we are here, then loop the event again
             self._login_state_machine(attempt + 1)
+ # type: ignore
